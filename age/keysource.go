@@ -35,6 +35,9 @@ const (
 	// SopsAgeSshPrivateKeyFileEnv can be set as an environment variable pointing to
 	// a private SSH key file.
 	SopsAgeSshPrivateKeyFileEnv = "SOPS_AGE_SSH_PRIVATE_KEY_FILE"
+	// SopsAgeSshPrivateKeyCmdEnv can be set as an environment variable with a command
+	// to execute that returns the age keys.
+	SopsAgeSshPrivateKeyCmdEnv = "SOPS_AGE_SSH_PRIVATE_KEY_CMD"
 	// SopsAgeKeyUserConfigPath is the default age keys file path in
 	// getUserConfigDir().
 	SopsAgeKeyUserConfigPath = "sops/age/keys.txt"
@@ -219,7 +222,7 @@ func formatError(msg string, err error, errs errSet, unusedLocations []string) e
 		} else if count == 2 {
 			unusedSuffix = fmt.Sprintf("s '%s' and '%s'", unusedLocations[0], unusedLocations[1])
 		} else {
-			unusedSuffix = fmt.Sprintf("s '%s', and '%s'", strings.Join(unusedLocations[:count - 1], "', '"), unusedLocations[count - 1])
+			unusedSuffix = fmt.Sprintf("s '%s', and '%s'", strings.Join(unusedLocations[:count-1], "', '"), unusedLocations[count-1])
 		}
 		unusedSuffix = fmt.Sprintf(". Did not find keys in location%s.", unusedSuffix)
 	}
@@ -305,6 +308,28 @@ func loadAgeSSHIdentities() ([]age.Identity, []string, errSet) {
 		}
 	} else {
 		unusedLocations = append(unusedLocations, SopsAgeSshPrivateKeyFileEnv)
+	}
+
+	sshKeyCmd, ok := os.LookupEnv(SopsAgeSshPrivateKeyCmdEnv)
+	if ok {
+		args, err := shlex.Split(sshKeyCmd)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to parse command %s from %s: %w", sshKeyCmd, SopsAgeSshPrivateKeyCmdEnv, err))
+		} else {
+			out, err := exec.Command(args[0], args[1:]...).Output()
+			if err != nil {
+				errs = append(errs, fmt.Errorf("failed to execute command %s from %s: %w", sshKeyCmd, SopsAgeSshPrivateKeyCmdEnv, err))
+			} else {
+				identity, err := agessh.ParseIdentity(out)
+				if err != nil {
+					errs = append(errs, err)
+				} else {
+					identities = append(identities, identity)
+				}
+			}
+		}
+	} else {
+		unusedLocations = append(unusedLocations, SopsAgeSshPrivateKeyCmdEnv)
 	}
 
 	userHomeDir, err := os.UserHomeDir()

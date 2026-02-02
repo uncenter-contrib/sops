@@ -241,7 +241,7 @@ You can override the default lookup by:
 
 - setting the environment variable **SOPS_AGE_KEY_FILE**;
 - setting the **SOPS_AGE_KEY** environment variable;
-- providing a command to output the age keys by setting the **SOPS_AGE_KEY_CMD** environment variable..
+- providing a command to output the age keys by setting the **SOPS_AGE_KEY_CMD** environment variable.
 
 The contents of this key file should be a list of age X25519 identities, one
 per line. Lines beginning with ``#`` are considered comments and ignored. Each
@@ -251,7 +251,7 @@ Encrypting with SSH keys via age is also supported by SOPS. You can use SSH publ
 ("ssh-ed25519 AAAA...", "ssh-rsa AAAA...") as age recipients when encrypting a file.
 When decrypting a file, SOPS will look for ``~/.ssh/id_ed25519`` and falls back to
 ``~/.ssh/id_rsa``. You can specify the location of the private key manually by setting
-the environment variable **SOPS_AGE_SSH_PRIVATE_KEY_FILE**.
+the environment variable **SOPS_AGE_SSH_PRIVATE_KEY_FILE**, or by providing a command to output the private key contents by setting the **SOPS_AGE_SSH_PRIVATE_KEY_CMD** environment variable.
 
 Note that only ``ssh-rsa`` and ``ssh-ed25519`` are supported.
 

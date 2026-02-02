@@ -496,6 +496,36 @@ func TestMasterKey_loadIdentities(t *testing.T) {
 		assert.Len(t, unusedLocations, 5)
 	})
 
+	t.Run(SopsAgeSshPrivateKeyCmdEnv, func(t *testing.T) {
+		tmpDir := t.TempDir()
+		// Overwrite to ensure local config is not picked up by tests
+		overwriteUserConfigDir(t, tmpDir)
+
+		t.Setenv(SopsAgeSshPrivateKeyCmdEnv, "echo '"+mockSshIdentity+"'")
+
+		key := &MasterKey{}
+		got, unusedLocations, errs := key.loadIdentities()
+		assert.Len(t, errs, 0)
+		assert.Len(t, got, 1)
+		assert.Len(t, unusedLocations, 5)
+	})
+
+	t.Run("cmd error", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		// Overwrite to ensure local config is not picked up by tests
+		overwriteUserConfigDir(t, tmpDir)
+
+		t.Setenv(SopsAgeKeyCmdEnv, "meow")
+
+		key := &MasterKey{}
+		got, unusedLocations, errs := key.loadIdentities()
+		assert.Len(t, errs, 1)
+		assert.Error(t, errs[0])
+		assert.ErrorContains(t, errs[0], "failed to execute command meow")
+		assert.Nil(t, got)
+		assert.Len(t, unusedLocations, 6)
+	})
+
 	t.Run(SopsAgeKeyCmdEnv, func(t *testing.T) {
 		tmpDir := t.TempDir()
 		// Overwrite to ensure local config is not picked up by tests
